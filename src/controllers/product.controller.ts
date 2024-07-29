@@ -24,7 +24,11 @@ import {
   ImportArchivedDataService,
   JobResponse,
 } from '@sourceloop/archival';
-import {CONTENT_TYPE, OPERATION_SECURITY_SPEC, STATUS_CODE} from '@sourceloop/core';
+import {
+  CONTENT_TYPE,
+  OPERATION_SECURITY_SPEC,
+  STATUS_CODE,
+} from '@sourceloop/core';
 import {STRATEGY, authenticate} from 'loopback4-authentication';
 import {authorize} from 'loopback4-authorization';
 import {Product} from '../models';
@@ -198,7 +202,7 @@ export class ProductController {
   @authorize({
     permissions: ['*'],
   })
-  @del('/products/archive',{
+  @del('/products/archive', {
     security: OPERATION_SECURITY_SPEC,
     responses: {
       [STATUS_CODE.NO_CONTENT]: {
@@ -207,17 +211,15 @@ export class ProductController {
     },
   })
   async archive(): Promise<void> {
-    const filter: Filter<Product> = {
-      where: {
-        description: 'sunsilk',
-      },
+    const where: Where<Product> = {
+      description: 'sunsilk',
     };
-    await this.productRepository.archive(filter);
+    await this.productRepository.deleteAll(where);
   }
 
   @authenticate(STRATEGY.BEARER)
   @authorize({permissions: ['*']})
-  @get('/products/archive',{
+  @get('/products/archive', {
     security: OPERATION_SECURITY_SPEC,
     responses: {
       [STATUS_CODE.OK]: {
@@ -230,8 +232,8 @@ export class ProductController {
     @param.filter(Product) filter?: Filter<Product>,
   ): Promise<JobResponse> {
     //return this.productRepository.find(filter);
-    const jobDetails = await this.getJobDetails('product', filter);
-    this.importArchivedDataService.start(jobDetails.jobId);
+    const jobDetails = await this.getJobDetails('Product', filter);
+    this.importArchivedDataService.import(jobDetails.jobId);
     return jobDetails;
   }
 }

@@ -24,9 +24,3 @@ export class Product extends UserModifiableEntity {
     super(data);
   }
 }
-
-export interface ProductRelations {
-  // describe navigational properties here
-}
-
-export type ProductWithRelations = Product & ProductRelations;

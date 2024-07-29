@@ -28,8 +28,15 @@ CREATE TABLE IF NOT EXISTS main.archive_mapping (
 CREATE TABLE IF NOT EXISTS main.job_details (
 		id                   uuid DEFAULT md5(random()::text || clock_timestamp()::text)::uuid NOT NULL ,
 		status               text NOT NULL ,
-		filter							 jsonb ,
+		filter_inquired							 jsonb ,
 		entity 							 text ,
 		result							 text,
+		created_on           timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	modified_on          timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL ,
+	created_by           uuid   ,
+	modified_by          uuid   ,
+	deleted              bool DEFAULT false NOT NULL ,
+	deleted_by           uuid   ,
+	deleted_on           timestamptz   ,
 		CONSTRAINT pk_job_details_id PRIMARY KEY ( id )
 );

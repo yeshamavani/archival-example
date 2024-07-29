@@ -7,7 +7,16 @@ import {
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
-import {ArchivalComponent} from '@sourceloop/archival';
+import {
+  ArchivalComponent,
+  ArchivalComponentBindings,
+} from '@sourceloop/archival';
+
+import {
+  ExportArchiveDataProvider,
+  ImportArchiveDataProvider,
+} from '@sourceloop/archival/aws-s3';
+
 import {
   BearerVerifierBindings,
   BearerVerifierComponent,
@@ -25,6 +34,8 @@ import {
   AuthorizationComponent,
 } from 'loopback4-authorization';
 import path from 'path';
+import {ProcessImportedDataProvider} from './providers/process-import-data.provider';
+import {BuildWhereConditionService} from './services/build-where-condition.service';
 
 export {ApplicationConfig};
 
@@ -61,39 +72,36 @@ export class SampleAppApplication extends BootMixin(
     // all from base component -- start
 
     this.sequence(ServiceSequence);
-
-    // Mount authentication component for default sequence
-    // this.bind(Strategies.Passport.BEARER_STRATEGY_FACTORY.key).toProvider(
-    //   BearerStrategyFactoryProvider,
-    // );
-    // this.bind(Strategies.Passport.BEARER_TOKEN_VERIFIER.key).toProvider(
-    //   BearerTokenVerifyProvider,
-    // );
     this.component(AuthenticationComponent);
-    // Mount bearer verifier component
-    this.bind(BearerVerifierBindings.Config).to({
-      authServiceUrl: '',
-      type: BearerVerifierType.service,
-    } as BearerVerifierConfig);
-    this.component(BearerVerifierComponent);
 
     // Mount authorization component for default sequence
     this.bind(AuthorizationBindings.CONFIG).to({
       allowAlwaysPaths: ['/explorer'],
     });
     this.component(AuthorizationComponent);
-
-    // all from base component -- end
-
+    this.component(ArchivalComponent);
+    this.bind(ArchivalComponentBindings.EXPORT_ARCHIVE_DATA).toProvider(
+      ExportArchiveDataProvider,
+    );
+    this.bind(ArchivalComponentBindings.IMPORT_ARCHIVE_DATA).toProvider(
+      ImportArchiveDataProvider,
+    );
+    this.bind(ArchivalComponentBindings.PROCESS_IMPORT_DATA).toProvider(
+      ProcessImportedDataProvider,
+    );
+    this.bind('services.BuildWhereConditionService').toClass(
+      BuildWhereConditionService,
+    );
+    // Mount bearer verifier component
     this.bind(BearerVerifierBindings.Config).to({
       type: BearerVerifierType.service,
+      useSymmetricEncryption: true,
     } as BearerVerifierConfig);
     this.component(BearerVerifierComponent);
     // Add authorization component
     this.bind(AuthorizationBindings.CONFIG).to({
       allowAlwaysPaths: ['/explorer', '/openapi.json'],
     });
-
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
 
@@ -103,10 +111,6 @@ export class SampleAppApplication extends BootMixin(
     });
     this.component(RestExplorerComponent);
 
-    // this.bind(Strategies.Passport.BEARER_STRATEGY_FACTORY).toProvider(
-    //   BearerStrategyFactoryProvider,
-    // );
-    this.component(ArchivalComponent);
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
